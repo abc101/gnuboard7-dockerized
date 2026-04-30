@@ -1,0 +1,75 @@
+services:
+  # PHP-FPM 컨테이너 설정
+  g7_app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        UID: ${UID:-1000}
+        GID: ${GID:-1000}
+        USERNAME: ${USER_NAME:-g7user}
+    container_name: ${PROJECT_NAME:-g7}_app
+    restart: unless-stopped
+    volumes:
+      - ./g7:/var/www/html
+      - ./entrypoint.sh:/usr/local/bin/entrypoint.sh
+      - ./conf/uploads.ini:/usr/local/etc/php/conf.d/uploads.ini:ro
+    environment:
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-g7_redis_pass}
+      - REDIS_HOST=${REDIS_HOST:-g7_redis}
+      - SESSION_DRIVER=${SESSION_DRIVER:-redis}
+      - CACHE_STORE=${CACHE_STORE:-redis}
+    entrypoint: ["/usr/local/bin/entrypoint.sh"]
+    command: ["php-fpm"]
+    extra_hosts:
+      - "${EXTRA_HOST_1:-localhost:127.0.0.1}"
+    networks:
+      - internal
+
+ # Nginx 컨테이너 설정
+  g7_web:
+    image: nginx:stable-alpine
+    container_name: ${PROJECT_NAME:-g7}_web
+    restart: unless-stopped
+    ports:
+      - "${APP_PORT:-80}:80"
+    volumes:
+      - ./g7:/var/www/html
+      - ./conf/nginx.conf:/etc/nginx/conf.d/default.conf:ro
+    depends_on:
+      - g7_app
+    networks:
+      - internal
+
+  # MariaDB 컨테이너 설정
+  g7_db:
+    image: mariadb:10.11
+    container_name: ${PROJECT_NAME:-g7}_db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-g7_db_root_pass}
+      MYSQL_DATABASE: ${DB_DATABASE:-g7_db}
+      MYSQL_USER: ${DB_USERNAME:-g7_user}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-g7_db_pass}
+    volumes:
+      - g7_db_data:/var/lib/mysql
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+    networks:
+      - internal
+
+  # Redis 컨테이너 설정
+  g7_redis:
+    image: redis:alpine
+    container_name: ${PROJECT_NAME:-g7}_redis
+    restart: unless-stopped
+    command: redis-server --requirepass ${REDIS_PASSWORD:-g7_redis_pass}
+    networks:
+      - internal
+
+volumes:
+  g7_db_data:
+
+networks:
+  internal:
+    name: ${PROJECT_NAME:-g7}_internal
+    driver: bridge
