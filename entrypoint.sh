@@ -38,4 +38,13 @@ if [ -d "/var/www/html/vendor" ]; then
     php artisan config:clear
 fi
 
+mkdir -p /var/www/html/storage/app/settings
+mkdir -p /var/www/html/bootstrap/cache
+
+chown -R ${USERNAME}:${USERNAME} /var/www/html/storage /var/www/html/bootstrap/cache
+chmod -R 775 /var/www/html/storage /var/www/html/bootstrap/cache
+
+chown ${USERNAME}:${USERNAME} /var/www/html/.env
+chmod 664 /var/www/html/.env
+
 exec "$@"

@@ -44,4 +44,9 @@ ENV npm_config_cache=/home/${USERNAME}/.npm
 RUN mkdir -p /home/${USERNAME}/.composer /home/${USERNAME}/.npm \
     && chown -R ${USERNAME}:${USERNAME} /home/${USERNAME}
 
+RUN sed -i "s/^user = .*/user = ${USERNAME}/" /usr/local/etc/php-fpm.d/www.conf \
+ && sed -i "s/^group = .*/group = ${USERNAME}/" /usr/local/etc/php-fpm.d/www.conf \
+ && sed -i "s/^listen.owner = .*/listen.owner = ${USERNAME}/" /usr/local/etc/php-fpm.d/www.conf \
+ && sed -i "s/^listen.group = .*/listen.group = ${USERNAME}/" /usr/local/etc/php-fpm.d/www.conf
+ 
 WORKDIR /var/www/html
