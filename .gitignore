@@ -2,3 +2,4 @@
 g7/
 .env
 .vscode/
+.DS_Store
